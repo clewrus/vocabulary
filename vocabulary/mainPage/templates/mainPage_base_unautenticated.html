@@ -1,0 +1,90 @@
+{%extends 'bootstrap3.html'%}
+
+{%block bootstrap3_content%}
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="#">TTT-huyline</a>
+    </div>
+
+    <div class="collapse navbar-collapse" id="navbar-collapse">
+      <ul class="nav navbar-nav navbar-right">
+      <form class="navbar-form navbar-left" method="post" action="{% url 'log_in' %}">
+        {%csrf_token%}
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="логин" name="username">
+          <input type="password" class="form-control" placeholder="пороль" name="password">
+        </div>
+        <button type="submit" class="btn btn-default">Submit</button>
+      </form>
+      </ul>
+
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+
+  <div class="text-center"><h1>Добро пожаловать, рандомный искатель</h1></div>
+<br><br>
+<div class="row">
+  <div class="col-md-6">
+    <div class="container center-block" style="max-width: 290px">
+        <h2>Зарегеструруешся?</h2>
+        <div class="alert alert-success center-block" role="alert" id="error" style="max-width: 290px">
+        {% if error %} error {% else %}Заполните поля{% endif %}
+        
+        </div>
+        <form id="registration_form" class="center-block" action="{% url 'registration' %}" method="post" style="max-width: 180px">
+          {% csrf_token %}
+          <input id="username" type="text" placeholder="Логин" name="username"><br>
+          <input type="password" id="password" placeholder="Пороль" name="password"><br>
+          <input type="password" id="repeat_password" placeholder="Повторите пороль" name="repeat_password"><br>
+          <button type="submit" class="btn btn-primary">Готово</button>
+        </form>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div id="#info" >
+      
+    </div>
+  </div>
+</div>
+{%endblock%}
+
+{% block bootstrap3_extra_script %}
+<script>
+  $(document).ready(function (){
+    $('#username').on('input', check_username)
+    $('#password').on('input', check_passwords)
+    $('#repeat_password').on('input', check_passwords)
+    
+    function check_username(){
+        $.ajax({
+            url: "{% url 'check_username' %}",
+            data: {username: $('#username').val()},
+            success: function(value){
+              if(value.valid){
+                $('#error').removeClass('alert-warning').addClass('alert-success').html('Заполните поля')
+              }else{
+                $('#error').removeClass('alert-success').addClass('alert-warning').html('<b>Внимание!</b> Этот ник уже занят');
+              }
+            }})
+    }
+    function check_passwords(){
+      let equil = $('#password').val() == $('#repeat_password').val()
+      if(equil){
+        $('#error').removeClass('alert-warning').addClass('alert-success')
+        check_username()
+      }else{
+        $('#error').removeClass('alert-success').addClass('alert-warning').html('<b>Внимание!</b> Пороли не совпадают');
+      }
+    }
+  });
+  </script>
+{% endblock %}

@@ -1,0 +1,111 @@
+Googletrans is a free and unlimited python library that implemented Google Translate API. This uses the Google Translate Ajax API to make calls to such methods as detect and translate.
+
+Compatible with Python 2.7+ and 3.4+. (Note: Python 2 support will be dropped in the next major release.)
+
+For details refer to the API Documentation.
+Features
+
+    Fast and reliable - it uses the same servers that translate.google.com uses
+    Auto language detection
+    Bulk translations
+    Customizable service URL
+    Connection pooling (the advantage of using requests.Session)
+    HTTP/2 support
+
+TODO
+
+more features are coming soon.
+
+    Proxy support
+    Internal session management (for better bulk translations)
+
+HTTP/2 support
+
+This is a great deal for everyone! (up to 2x times faster in my test) If you want to get googletrans faster you should install hyper package. Googletrans will automatically detect if hyper is installed and if so, it will be used for http networking.
+How does this library work
+
+You may wonder why this library works properly, whereas other approaches such like goslate won’t work since Google has updated its translation service recently with a ticket mechanism to prevent a lot of crawler programs.
+
+I eventually figure out a way to generate a ticket by reverse engineering on the obfuscated and minified code used by Google to generate such token, and implemented on the top of Python. However, this could be blocked at any time.
+Installation
+
+To install, either use things like pip with the package “googletrans” or download the package and put the “googletrans” directory into your python path. Anyway, it is noteworthy that, this just requires two modules: requests and future.
+
+$ pip install googletrans
+
+Basic Usage
+
+If source language is not given, google translate attempts to detect the source language.
+
+>>> from googletrans import Translator
+>>> translator = Translator()
+>>> translator.translate('안녕하세요.')
+# <Translated src=ko dest=en text=Good evening. pronunciation=Good evening.>
+>>> translator.translate('안녕하세요.', dest='ja')
+# <Translated src=ko dest=ja text=こんにちは。 pronunciation=Kon'nichiwa.>
+>>> translator.translate('veritas lux mea', src='la')
+# <Translated src=la dest=en text=The truth is my light pronunciation=The truth is my light>
+
+Customize service URL
+
+You can use another google translate domain for translation. If multiple URLs are provided it then randomly chooses a domain.
+
+>>> from googletrans import Translator
+>>> translator = Translator(service_urls=[
+      'translate.google.com',
+      'translate.google.co.kr',
+    ])
+
+Advanced Usage (Bulk)
+
+Array can be used to translate a batch of strings in a single method call and a single HTTP session. The exact same method shown above work for arrays as well.
+
+>>> translations = translator.translate(['The quick brown fox', 'jumps over', 'the lazy dog'], dest='ko')
+>>> for translation in translations:
+...    print(translation.origin, ' -> ', translation.text)
+# The quick brown fox  ->  빠른 갈색 여우
+# jumps over  ->  이상 점프
+# the lazy dog  ->  게으른 개
+
+Language detection
+
+The detect method, as its name implies, identifies the language used in a given sentence.
+
+>>> from googletrans import Translator
+>>> translator = Translator()
+>>> translator.detect('이 문장은 한글로 쓰여졌습니다.')
+# <Detected lang=ko confidence=0.27041003>
+>>> translator.detect('この文章は日本語で書かれました。')
+# <Detected lang=ja confidence=0.64889508>
+>>> translator.detect('This sentence is written in English.')
+# <Detected lang=en confidence=0.22348526>
+>>> translator.detect('Tiu frazo estas skribita en Esperanto.')
+# <Detected lang=eo confidence=0.10538048>
+
+GoogleTrans as a command line application
+
+$ translate -h
+usage: translate [-h] [-d DEST] [-s SRC] [-c] text
+
+Python Google Translator as a command-line tool
+
+positional arguments:
+  text                  The text you want to translate.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -d DEST, --dest DEST  The destination language you want to translate.
+                        (Default: en)
+  -s SRC, --src SRC     The source language you want to translate. (Default:
+                        auto)
+  -c, --detect
+
+$ translate "veritas lux mea" -s la -d en
+[veritas] veritas lux mea
+    ->
+[en] The truth is my light
+[pron.] The truth is my light
+
+$ translate -c "안녕하세요."
+[ko, 1] 안녕하세요.
+
