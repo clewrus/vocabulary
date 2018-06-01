@@ -88,3 +88,9 @@ def check_for_eng_laters(word):
 		if letter in string.ascii_letters:
 			return False
 	return True
+
+def drills(request):
+	if not request.user.is_authenticated:
+		return HttpResponseRedirect(reverse('main_page'), {'error': "You are not authenticated"})
+	unlearned_words = UserWords.objects.filter(learned=False).count()
+	return render(request, 'drills.html', {'user': request.user, 'unlearned_words':unlearned_words})

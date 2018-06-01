@@ -17,7 +17,7 @@
     <div class="collapse navbar-collapse" id="navbar-collapse">
       <ul class="nav navbar-nav">
         <li><a href="{% url 'vocabulary' %}">My vocabulary</a></li>
-        <li><a href="#">Drills</a></li>
+        <li><a href="{% url 'drills' %}">Drills</a></li>
       </ul>
       <ul class="nav navbar-nav navbar-right" id="navbar-right">
       	<li><a href="{% url 'log_out' %}">exit({{user.username}})</a></li>
