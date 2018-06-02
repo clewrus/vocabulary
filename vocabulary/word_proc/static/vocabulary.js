@@ -12,7 +12,7 @@ let visibleRows = [];
 let visiblePnt = 0;
 let inSearch = false;
 let searchRows = [];
-const WORDS_PER_PAGE = 13;
+let WORDS_PER_PAGE = 13;
 
 
 $(function(){
@@ -216,18 +216,19 @@ function applyTransChanges(){
 		});
 	}
 
-	console.log(removedWords)
-	$.ajax({
-		url: $("#url_remove_user_words").html(),
-		type: "post",
-		data: {"removed_words": removedWords},
-		success: () => {
-			$(".trash_label").removeClass("trash_activated").addClass("trash_deactivated");
-			removeWordFromTable();
-			removedWords = [];
-			disableSaveButton();},
-		error: (res) => {console.log(res);},
-	});
+	if(removedWords.length > 0){
+		$.ajax({
+			url: $("#url_remove_user_words").html(),
+			type: "post",
+			data: {"removed_words": removedWords},
+			success: () => {
+				$(".trash_label").removeClass("trash_activated").addClass("trash_deactivated");
+				removeWordFromTable();
+				removedWords = [];
+				disableSaveButton();},
+			error: (res) => {console.log(res);},
+		});
+	}
 }
 
 function hideEverything(){
