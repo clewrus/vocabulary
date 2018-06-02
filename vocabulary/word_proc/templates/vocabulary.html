@@ -1,16 +1,21 @@
 {% extends 'mainPage_base.html' %}
 
-{% block bootstrap3_extra_script %}
+{% block bootstrap3_extra_head %}
 {% load staticfiles %}
 <script src="{% static 'vocabulary.js' %}"></script>
 <link rel="stylesheet" href="{% static 'vocabulary_style.css' %}">
+{% load fontawesome %}
+{% fontawesome_stylesheet %}
 {% endblock %}
 
 {% block content %}
+
 <div class="hide">
 	<span id="url_add_word">{% url 'add_word' %}</span>
 	<span id="url_get_word_list">{% url 'get_word_list' %}</span>
 	<span id="url_change_user_trans">{% url 'change_user_trans' %}</span>
+	<span id="url_remove_user_words">{% url 'remove_user_words' %}</span>
+	<span id="trash_icon">{% fontawesome_icon 'trash' large=True %}</span>
 </div>
 <div class="center-block" style="max-width: 650px">	
 	<div id="eng_input" class="input-group">
@@ -28,7 +33,7 @@
 <div style="height: 70px; padding: 6px;" >
 	<div id="alert_add_word" class="alert alert-danger center-block hide"></div>
 </div>
-<div class="center-block" style="max-width: 1000px; height: 615px">
+<div id="table_hug" class="center-block" style="; height: 615px">
 	<table id="word_table" class="table table-bordered" style="padding: 10px">
 		<thead class="thead-light text-centered" style="height: 45px;">
 			<th class="table_head" style="padding: 0px 5px 0px 5px; width: 20%;"><p>Word</p></th>
@@ -43,13 +48,17 @@
 		<tbody id="word_list"></tbody>
 	</table>
 </div>
-<div class="row">
+<div class="row center-block" style="max-width: 1000px;">
 	<div class="col-xs-3"></div>
 	<div class="col-xs-3">
-	<button id="left_arrow" class="btn btn-outline-dark disabled"><</button>
+	<button id="left_arrow" class="btn btn-outline-dark disabled">
+		{% fontawesome_icon 'arrow-circle-left' large=True %}
+	</button>
 	</div>
 	<div class="col-xs-3">
-		<button id="right_arrow" class="btn btn-dark">></button>
+		<button id="right_arrow" class="btn btn-dark">
+			{% fontawesome_icon 'arrow-circle-right' large=True  %}
+		</button>
 	</div>
 	<div class="col-xs-3"></div>
 </div>

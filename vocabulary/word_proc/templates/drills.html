@@ -1,13 +1,15 @@
 {% extends 'mainPage_base.html' %}
 
-{% block bootstrap3_extra_script %}
+{% block bootstrap3_extra_head %}
 {% load staticfiles %}
 <script src="{% static 'drills.js' %}"></script>
 <link rel="stylesheet" href="{% static 'drills_style.css' %}">
+{% load fontawesome %}
+{% fontawesome_stylesheet %}
 {% endblock %}
 
 {% block content %}
-<div class="row">
+<div id="#start_buttons" class="row">
 	<div class="col-xs-3"></div>
 	<div class="col-xs-3">
 		<button id="learn_button" class="btn btn-default chose_buttons">Learn ({{ unlearned_words }} words)</button>
@@ -16,6 +18,7 @@
 		<button id="drill_button" class="btn btn-default chose_buttons">Start the drill</button>
 	</div>
 	<div class="col-xs-3"></div>
-
 </div>
+
+{% fontawesome_icon 'trash' large=True %}
 {% endblock %}

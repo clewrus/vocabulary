@@ -55,7 +55,26 @@ def add_word(request):
 			return not_eng_word_response
 	# adding the record to User's vocadulary
 	UserWords.objects.create(word=record, user_trans=user_trans, rating=10000, user=request.user)
-	return JsonResponse({'result' : 'success', 'answer' : 'created', 'word':[record.eng, record.rus, user_trans]})
+	return JsonResponse({'result': 'success', 'answer': 'created', 'word': [record.eng, record.rus, user_trans]})
+
+def remove_user_words(request):
+	if not request.user.is_authenticated or not request.POST:
+		return None
+
+	words_for_remove = dict(request.POST)['removed_words[]']
+	for word in words_for_remove:
+		try:
+			dictNote = Dictionary.objects.get(eng=word);
+			UserWords.objects.filter(user=request.user, word=dictNote).delete()
+		except Dictionary.DoesNotExist:
+			print('Warning! ' + request.user.username + ' tried to change non-existent word (' + word + ')')
+			continue
+		except UserWords.DoesNotExist:
+			print('Warning! ' + request.user.username + ' tried to change word that not in his vocabulary (' + word + ')')
+			continue
+
+	return JsonResponse({'result': 'succsess', 'answer': 'removed'})
+
 
 def get_word_list(request):
 	if not request.user.is_authenticated:

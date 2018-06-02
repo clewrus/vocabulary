@@ -30,12 +30,27 @@
     	vertical-align: middle;
 }
 
-#word_list {
+#word_list{
+	font-size: large;
+	height: 44px;
+}
+
+#word_list p{
+	margin: 0px;
+}
+
+#right_arrow, #left_arrow{
 	font-size: large;
 }
 
 #right_arrow{
 	float: right;
+
+}
+
+#table_hug{
+	max-width: 1000px;
+	/*height defined in js according to the WORDS_PER_PAGE*/
 }
 
 table{
@@ -44,6 +59,24 @@ table{
 
 .tall{
 	height: 100%;
+}
+
+.trash_deactivated{
+	opacity: 0.1;
+}
+
+.trash_activated{
+	opacity: 1;
+}
+
+.trash_label{
+	position: relative;
+	right: 40px;
+	float: left;
+}
+
+.trash_label:hover{
+	opacity: 0.9;
 }
 
 .table_head{

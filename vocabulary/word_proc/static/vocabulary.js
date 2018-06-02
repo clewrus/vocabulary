@@ -6,10 +6,12 @@ let answer = {
 };
 let tableData = {};
 let transUpdateList = {};
+let transChanged = false;
+let removedWords = [];
 let visibleRows = [];
 let visiblePnt = 0;
 let inSearch = false;
-let searchRows;
+let searchRows = [];
 const WORDS_PER_PAGE = 13;
 
 
@@ -18,8 +20,9 @@ $(function(){
 	alert = $("#alert_add_word").removeClass('hide').hide();
 	$("#add_word").click(sendWord);
 	$("#save_button").click(applyTransChanges);
-	$("#left_arrow").click(leftArrowEvent)
-	$("#right_arrow").click(rightArrowEvent)
+	$("#left_arrow").click(leftArrowEvent);
+	$("#right_arrow").click(rightArrowEvent);
+	$("#table_hug").css("height", 65 + 43 * WORDS_PER_PAGE + "px")
 
 	fillWordTable();
 })
@@ -74,6 +77,15 @@ function addWordToTable(word, autoTrans, userTrans){
 	buildTable();
 }
 
+function removeWordFromTable(){
+	for (let i = tableData.length - 1; i >= 0; i--) {
+		if(removedWords.includes(tableData[i].eng_word)){
+			tableData.splice(i, 1);
+		}
+	}
+	buildTable();
+}
+
 function setCSRF(){
 	$.ajaxSetup({ 
 	     beforeSend: function(xhr, settings) {
@@ -112,7 +124,7 @@ function fillWordTable(){
 			buildTable();
 		},
 		error: (res) => console.log(res),
-	})
+	});
 }
 
 function parseData(data){
@@ -120,6 +132,7 @@ function parseData(data){
 	for(w in data){
 		curItem = {}
 		curItem["eng_word"] = w;
+		curItem["for_remove"] = false;
 		// a little bit silly but i really desired to try extend function
 		$.extend(true, curItem, data[w]);
 		result.push(curItem)
@@ -141,17 +154,45 @@ function buildTable(){
 
 function generateTableRow(word, auto_trans, user_trans, id){
 	let getTd = () => $("<td></td>");
+	let getP = (s) => $("<p></p>").text(s)
+	let getTrash = () => $($("#trash_icon").children()[0]).clone()
 	curRow = $("<tr></tr>").attr("id", id);
-		curRow.append(getTd().text(word)).append(getTd().text(auto_trans));
-		inp = $("<input></input>").on("input", handleTransChange).addClass("form-control").addClass("table_input").attr("eng_word", word).attr("type", "input").val(user_trans);
-		curRow.append(getTd().append(inp).addClass("table_row").css("padding", "0px"))
+	trashSpan = getTrash().addClass("trash_deactivated trash_label").attr("index", id).click(trashClicked);
+	curRow.append(getTd().append(trashSpan).append(getP(word))).append(getTd().append(getP(auto_trans)));
+	inp = $("<input></input>").on("input", handleTransChange).addClass("form-control table_input").addClass("").attr("eng_word", word).attr("type", "input").val(user_trans);
+	curRow.append(getTd().append(inp).addClass("table_row").css("padding", "0px"))
 	return curRow
+}
+function trashClicked(smth){
+	let element = $(smth.currentTarget)
+	let id = +element.attr("index").split("_")[1];
+	let curObj = tableData[id];
+	curObj.for_remove = !curObj.for_remove;
+	if(curObj.for_remove){
+		element.removeClass("trash_deactivated").addClass("trash_activated");
+		removedWords.push(curObj.eng_word);
+	} else {
+		element.removeClass("trash_activated");
+		element.addClass("trash_deactivated");
+		index = removedWords.indexOf(curObj.eng_word);
+		removedWords.splice(index, 1)
+	}
+	if(removedWords.length > 0){
+		$("#save_button").removeClass("disabled");
+	} else if(!transChanged){
+		disableSaveButton();
+	}
 }
 
 function handleTransChange(smth){
 	curInput = $(smth.currentTarget);
 	transUpdateList[curInput.attr("eng_word")] = curInput.val();
+	transChanged = true;
 	$("#save_button").removeClass("disabled")
+}
+
+function disableSaveButton(){
+	$("#save_button").addClass("disabled");
 }
 
 function applyTransChanges(){
@@ -159,17 +200,33 @@ function applyTransChanges(){
 		return;
 
 	setCSRF();
+	if(transChanged){
+		$.ajax({
+			url: $("#url_change_user_trans").html(),
+			type: "post",
+			data: transUpdateList,
+			success: () => {
+				transUpdateList = {};
+				disableSaveButton();
+				transChanged = false;
+			},
+			error: (res) => {
+				console.log(res)
+			},
+		});
+	}
+
+	console.log(removedWords)
 	$.ajax({
-		url: $("#url_change_user_trans").html(),
+		url: $("#url_remove_user_words").html(),
 		type: "post",
-		data: transUpdateList,
+		data: {"removed_words": removedWords},
 		success: () => {
-			transUpdateList = {};
-			$("#save_button").addClass("disabled")
-		},
-		error: (res) => {
-			console.log(res)
-		},
+			$(".trash_label").removeClass("trash_activated").addClass("trash_deactivated");
+			removeWordFromTable();
+			removedWords = [];
+			disableSaveButton();},
+		error: (res) => {console.log(res);},
 	});
 }
 
@@ -184,6 +241,7 @@ function updateVisibleRows(){
 	for(i in visibleRows){
 		$("#row_" + visibleRows[i]).show();
 	}
+
 }
 
 function setupFullPageOfRows(){
@@ -193,6 +251,7 @@ function setupFullPageOfRows(){
 			visibleRows.push(i);
 		}
 	}
+	updateArrows();
 }
 
 function leftArrowEvent(){
@@ -201,10 +260,11 @@ function leftArrowEvent(){
 		return;
 	}
 	visiblePnt -= WORDS_PER_PAGE;
-	$("#right_arrow").removeClass("disabled");
-	if(visiblePnt - WORDS_PER_PAGE < 0){
-		$("#left_arrow").addClass("disabled");
-	}
+	updateArrows();
+	// $("#right_arrow").removeClass("disabled");
+	// if(visiblePnt - WORDS_PER_PAGE < 0){
+	// 	$("#left_arrow").addClass("disabled");
+	// }
 	setupFullPageOfRows();
 	updateVisibleRows();
 }
@@ -215,10 +275,24 @@ function rightArrowEvent(){
 		return;
 	}
 	visiblePnt += WORDS_PER_PAGE;
+	updateArrows();
+	// $("#left_arrow").removeClass("disabled");
+	// if(visiblePnt + WORDS_PER_PAGE >= numOfItems){
+	// 	$("#right_arrow").addClass("disabled");
+	// }
+	setupFullPageOfRows();
+	updateVisibleRows();
+}
+
+function updateArrows(){
 	$("#left_arrow").removeClass("disabled");
+	if(visiblePnt - WORDS_PER_PAGE < 0){
+		$("#left_arrow").addClass("disabled");
+	}
+
+	$("#right_arrow").removeClass("disabled");
+	numOfItems = inSearch ? searchRows : tableData.length;
 	if(visiblePnt + WORDS_PER_PAGE >= numOfItems){
 		$("#right_arrow").addClass("disabled");
 	}
-	setupFullPageOfRows();
-	updateVisibleRows();
 }
