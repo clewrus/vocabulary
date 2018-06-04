@@ -9,16 +9,44 @@
 {% endblock %}
 
 {% block content %}
-<div id="#start_buttons" class="row">
-	<div class="col-xs-3"></div>
-	<div class="col-xs-3">
-		<button id="learn_button" class="btn btn-default chose_buttons">Learn ({{ unlearned_words }} words)</button>
-	</div>
-	<div class="col-xs-3">
-		<button id="drill_button" class="btn btn-default chose_buttons">Start the drill</button>
-	</div>
-	<div class="col-xs-3"></div>
+<div class="hide">
+	<span id="url_get_unlearned_word">{% url 'get_unlearned_word' %}</span>
+	<span id="url_set_word_as_learned">{% url 'set_word_as_learned' %}</span>
 </div>
 
-{% fontawesome_icon 'trash' large=True %}
+<div id="main_block" class="center-block">
+<div id="drills_nav">
+	<div id="#start_buttons" class="row">
+		<div class="col-xs-2"></div>
+		<div class="col-xs-4">
+			<button id="learn_button" class="btn btn-default chose_buttons">Learn ({{ unlearned_words }} words)</button>
+		</div>
+		<div class="col-xs-4">
+			<button id="drill_button" class="btn btn-default chose_buttons">Start the drill</button>
+		</div>
+		<div class="col-xs-2"></div>
+	</div>
+</div>
+<div id="event_screen" class="border">
+	<div id="title_graph"><p id="title_phrase"></p></div>
+	<div id="word_graph"><p id="word"></p></div>
+	<div id="trans_graph">
+		<div id="translation">
+			<p id="auto_trans"></p>
+			<p id="custom_trans"></p>
+		</div>
+	</div>
+	<div id="answer_buttons">
+		<div id="button_hug">
+		<button class="btn btn-warning drill_buttons" result="-">Made a mistake</button>
+		<button class="btn btn-warning learn_buttons" result="-">Still not remember</button>
+		<button id="show_trans_button" class="btn btn-default">Show translation</button>
+		<button class="btn btn-success drill_buttons" result="+">Correct</button>
+		<button class="btn btn-success learn_buttons" result="+">Correct</button>
+		
+		</div>
+	</div>
+</div>
+</div>
+<div id="footer"></div>
 {% endblock %}

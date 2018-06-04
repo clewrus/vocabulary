@@ -1,3 +1,71 @@
+#main_block{
+	max-width: 1000px;
+	height: 600px;
+	font-size: large;
+}
+
+#drills_nav{
+	height: 70px;
+}
+
+#footer{
+	height: 100px;
+}
+
+#event_screen{
+	width: 100%;
+	height: calc(100% - 70px);
+	border-style: solid;
+	border-width: 2px;
+	border-color: #ccc;
+	border-radius: 10px;
+	padding: 25px;
+	text-align: center;
+
+}
+
+#word_graph, #trans_graph, #answer_buttons, #title_graph{
+	width: 100%;
+	display: table;
+}
+
+#title_phrase, #word, #translation{
+	display: table-cell;
+	vertical-align: middle;
+}
+
+#title_graph{
+	height: 15%;
+	font-size: xx-large;
+}
+
+#word_graph{
+	height: 20%;
+	font-size: x-large;
+}
+
+#trans_graph{
+	height: 40%;
+	font-size: x-large;
+}
+
+#answer_buttons{
+	height: 25%;
+	font-size: large;
+}
+
+#button_hug{
+	display: table-cell;
+	vertical-align: middle;
+}
+
 .chose_buttons{
 	width: 100%;
+	font-size: inherit;
+}
+
+.learn_buttons, .drill_buttons, #show_trans_button{
+	color: #333;
+	font-size: inherit;
+	min-width: 170px
 }
