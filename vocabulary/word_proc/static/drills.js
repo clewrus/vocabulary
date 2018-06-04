@@ -1,6 +1,8 @@
 let wordsToLearn = [];
+let drillWords = [];
 let curWord = undefined;
-
+let drillWordsNumberInput = undefined;
+let drillResultList = {};
 
 $(function(){
 	$("#button_hug").children().hide();
@@ -10,18 +12,20 @@ $(function(){
 	$("#show_trans_button").click(showTranslation);
 	$(".learn_buttons").click(learnResult);
 	$(".drill_buttons").click(drillResult);
+
+	$("#word").html("Welcome to the drills.<br>You can either learn words or get some drills.")
 });
 
 // have to handle situation when there are too many words
 function handleLearnEvent(){
-	hideStartButtons();
+	cleanEventScreen();
 	setupLearnInterphase();
 	$.ajax({
 		url: $("#url_get_unlearned_word").html(),
 		type: "post",
 		success: (res) => {
 			wordsToLearn = getWordArray(res);
-			nextLearningWord();
+			nextWord(wordsToLearn);
 		},
 		error: (res) => {
 			console.log(res);
@@ -33,21 +37,30 @@ function getWordArray(res){
 	arr = [];
 	for(w in res){
 		res[w].success_run = 0;
+		res[w].appeared_on_screen = 0;
 		arr.push(res[w]);
 	}
 	return arr;
 }
 
 function setupLearnInterphase(){
-	$(".drill_buttons").hide();
 	$(".learn_buttons").show();
 	$("#show_trans_button").show();
 	$("#title_phrase").text("What is the translation?")
 }
 
-function nextLearningWord(){
+function nextWord(srcList){
 	// to let last words sometime appear at the screen
-	curWord = wordsToLearn.splice(Math.random() > 0.8 ? -1 : 0, 1)[0];
+	if(srcList.length == 0){
+		if(srcList === wordsToLearn){
+			endOfLearn();
+		} else if(srcList === drillWords){
+			endOfDrill();
+		}
+		return;
+	}
+
+	curWord = srcList.splice(Math.random() > 0.8 ? -1 : 0, 1)[0];
 	$("#word").text(curWord.eng);
 	hideTranslation();
 	disableAnswerButtons();
@@ -69,7 +82,7 @@ function learnResult(context){
 	} else {
 		console.log("error", context);
 	}
-
+	curWord.appeared_on_screen++;
 	if(curWord.success_run >= 2){
 		setWordAsLearned();
 	} else {
@@ -77,7 +90,7 @@ function learnResult(context){
 		wordsToLearn.splice(position, 0, curWord);
 	}
 	curWord = undefined;
-	nextLearningWord();
+	nextWord(wordsToLearn);
 }
 
 function setWordAsLearned(){
@@ -90,12 +103,87 @@ function setWordAsLearned(){
 	});
 }
 
-function handleDrillEvent(){
+function endOfLearn(){
+	cleanEventScreen();
+	$("#title_phrase").text("You learn all this words!");
+	$("#word").text("Congratulations. Now you can go to drills.")
+}
 
+function handleDrillEvent(){
+	cleanEventScreen();
+	showDrillSetuper();
+}
+
+function showDrillSetuper(){
+	$("#title_phrase").text("How many words will be in the drill?");
+	input = $("<input></input>").attr("id", "drill_words_number").addClass("temperary").val(20);
+	drillWordsNumberInput = input;
+	$("#word_graph").append(input);
+	agreeButton = $("<button></button>").addClass("btn btn-success temperary").css("font-size", "xx-large").css("display", "table-cell").text("Go to drill").click(startDrill);
+	$("#answer_buttons").append(agreeButton);
+}
+
+function startDrill(){
+	drillSize = drillWordsNumberInput.val();
+	drillResultList.drill_size = drillSize;
+	$.ajax({
+		url: $("#url_get_drill_words").html(),
+		data: {"num_of_words": drillSize},
+		type: "post",
+		success: (res) => {
+			drillWords = getWordArray(res);
+			cleanEventScreen();
+			setupDrillInterphase();
+			nextWord(drillWords);
+		},
+		error: (res) => {console.log(res)},
+	});
+}
+
+function setupDrillInterphase(){
+	$(".drill_buttons").show();
+	$("#show_trans_button").show();
+	$("#title_phrase").text("Do you remember the word?")
 }
 
 function drillResult(context){
+	let elem = $(context.currentTarget);
+	if(elem.attr("class").includes("disabled")){
+		return;
+	}
+	let result = elem.attr("result");
+	curWord.appeared_on_screen++;
+	if(result === "+"){
+		curWord.success_run++;
+	}
+	if(curWord.appeared_on_screen >= 2){
+		drillResultList[curWord.eng] = curWord.success_run;
+	} else {
+		let position = Math.floor((Math.random() + 1) * drillWords.length / 2.0);
+		drillWords.splice(position, 0, curWord);
+	}
+	curWord = undefined;
+	nextWord(drillWords);
+}
 
+function endOfDrill(){
+	cleanEventScreen();
+	$("#title_phrase").text("It's all. Just save your result.");
+	saveButton = $("<button></button>").addClass("btn btn-success temperary").css("font-size", "xx-large").css("display", "table-cell").text("Save drill result").click(() => {
+		$.ajax({
+			url: $("#url_handle_drill_result").html(),
+			data: drillResultList,
+			type: "post",
+			success: () => {
+				cleanEventScreen();
+				$("#title_phrase").text("Your result was saved. Now you can take drill one more time.");
+			},
+			error: (res) => {
+				console.log(res);
+			}
+		});
+	});
+	$("#answer_buttons").append(saveButton);
 }
 
 function setCSRF(){
@@ -121,14 +209,6 @@ function setCSRF(){
 	});
 }
 
-function hideStartButtons(){
-	$("#start_buttons").hide();
-}
-
-function showStartButtons(){
-	$("#start_buttons").show();
-}
-
 function hideTranslation(){
 	$("#translation").hide();
 }
@@ -146,4 +226,12 @@ function disableAnswerButtons(){
 function enableAnswerButtons(){
 	$(".drill_buttons").removeClass("disabled");
 	$(".learn_buttons").removeClass("disabled");
+}
+
+function cleanEventScreen(){
+	$("#button_hug").children().hide();
+	$(".temperary").remove();
+	hideTranslation();
+	$("#title_phrase").text("")
+	$("#word").text("")
 }

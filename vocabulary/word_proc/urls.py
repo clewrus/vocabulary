@@ -9,5 +9,7 @@ urlpatterns = [
 	path('remove_user_words/', views_vocabulary.remove_user_words, name='remove_user_words'),
 	path('drills/', views_drills.drills, name='drills'),
 	path('get_unlearned_word/', views_drills.get_unlearned_word, name='get_unlearned_word'),
-	path('set_word_as_learned/', views_drills.set_word_as_learned, name='set_word_as_learned')
+	path('set_word_as_learned/', views_drills.set_word_as_learned, name='set_word_as_learned'),
+	path('get_drill_words', views_drills.get_drill_words, name='get_drill_words'),
+	path('handle_drill_result/', views_drills.handle_drill_result, name='handle_drill_result')
 ]

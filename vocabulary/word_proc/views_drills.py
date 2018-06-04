@@ -8,6 +8,8 @@ from .models import UserWords, Dictionary
 def drills(request):
 	if not request.user.is_authenticated:
 		return HttpResponseRedirect(reverse('main_page'), {'error': "You are not authenticated"})
+
+	updateWordsRating(request.user)
 	unlearned_words = UserWords.objects.filter(learned=False, user=request.user).count()
 	return render(request, 'drills.html', {'user': request.user, 'unlearned_words':unlearned_words})
 
@@ -16,12 +18,8 @@ def get_unlearned_word(request):
 		return JsonResponse({'error': 'You are not authenticated'})
 
 	unlearned_words = UserWords.objects.filter(learned=False, user=request.user)
-	i = 0
-	response = {}
-	for w in unlearned_words:
-		response.update({i: {'eng':w.word.eng, 'auto':w.word.rus, 'custom':w.user_trans}})
-		i += 1
-	return JsonResponse(response)
+
+	return getResponseDict(unlearned_words)
 
 def set_word_as_learned(request):
 	if not request.user.is_authenticated or not request.POST:
@@ -39,3 +37,31 @@ def set_word_as_learned(request):
 		print('User({u}) have not such word({w})'.format(u=request.user.username, w=learned_word))
 
 	return JsonResponse({'result': 'succsess', 'answer': 'saved'})
+
+def get_drill_words(request):
+	if not request.user.is_authenticated or not request.POST:
+		return JsonResponse({'error': 'You are not authenticated'})
+
+	num = int(request.POST['num_of_words'])
+	word_list = UserWords.objects.filter(user=request.user, learned=True).order_by('rating')
+	drill_set = word_list[: num if num <= len(word_list) else len(word_list)]
+	return getResponseDict(drill_set)
+
+def updateWordsRating(user):
+
+	return
+
+def handle_drill_result(request):
+	if not request.user.is_authenticated or not request.POST:
+		return JsonResponse({'error': 'You are not authenticated'})
+
+	print(request.POST)
+	return JsonResponse({'answer': 'success'})
+
+def getResponseDict(userWords_queryset):
+	i = 0
+	response = {}
+	for w in userWords_queryset:
+		response.update({i: {'eng':w.word.eng, 'auto':w.word.rus, 'custom':w.user_trans}})
+		i += 1
+	return JsonResponse(response)
