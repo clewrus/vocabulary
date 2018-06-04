@@ -3,7 +3,9 @@ from django.contrib import auth
 from django.contrib.auth.models import User
 from django.http import HttpResponseRedirect, JsonResponse
 from django.urls import reverse
-from .models import UserWords, Dictionary
+from datetime import datetime
+from .models import UserWords, Dictionary, Drills
+from math import log
 
 def drills(request):
 	if not request.user.is_authenticated:
@@ -28,9 +30,13 @@ def set_word_as_learned(request):
 	learned_word = request.POST.get('word')
 	try:
 		word_record = Dictionary.objects.get(eng=learned_word)
-		user_word_record = UserWords.objects.get(user=request.user, word=word_record)
-		user_word_record.learned = True
-		user_word_record.save()
+		us_word = UserWords.objects.get(user=request.user, word=word_record)
+		us_word.learned = True
+		us_word.last_drilled = datetime.now()
+		us_word.last_rating_update = datetime.now()
+		us_word.success_run = 0
+		us_word.rating = 100
+		us_word.save()
 	except Dictionary.DoesNotExist:
 		print('Word does not exist ({w})'.format(w=learned_word) )
 	except UserWords.DoesNotExist:
@@ -48,15 +54,60 @@ def get_drill_words(request):
 	return getResponseDict(drill_set)
 
 def updateWordsRating(user):
-
+	user_w_rec = UserWords.objects.filter(user=user, learned=True)
+	now_ = datetime.now()
+	for w in user_w_rec:
+		diff = (now_ - w.last_rating_update).total_seconds()
+		if(diff > 43200):
+			w.rating = UserWords.rate_function(w.rating, diff)
+			w.last_rating_update = now_
+			if w.rating == 0:
+				w.learned = False
+			w.save()
+		else:
+			continue
 	return
 
 def handle_drill_result(request):
 	if not request.user.is_authenticated or not request.POST:
 		return JsonResponse({'error': 'You are not authenticated'})
 
-	print(request.POST)
+	drill_res = dict(request.POST)
+	drill_size = int(drill_res['drill_size'][0])
+	del drill_res['drill_size']
+	correct_answers = 0
+
+	for w in drill_res.keys():
+		try:
+			cur_res = int(drill_res[w][0])
+			word_record = Dictionary.objects.get(eng=w)
+			user_w_rec = UserWords.objects.get(user=request.user, word=word_record)
+			new_rate = get_new_rate(user_w_rec.rating, user_w_rec.success_run, cur_res)
+			user_w_rec.rating = new_rate
+			user_w_rec.success_run = (user_w_rec.success_run + 1) if cur_res == 2 else 0
+			correct_answers += 1 if cur_res == 2 else 0
+			if new_rate == 0:
+				user_w_rec.learned = False
+			user_w_rec.last_drilled = datetime.now()
+			user_w_rec.save()
+		except Dictionary.DoesNotExist:
+			print("User ({u}) tryed to update word ({w}). It does not exist.".format(u=request.user.username, w=w))
+			continue
+		except UserWords.DoesNotExist:
+			print("User ({u}) tryed to update word ({w}). He didn't add it to his voc.".format(u=request.user.username, w=w))
+			continue
+
+	Drills.objects.create(user=request.user, num_of_tests = drill_size, num_of_corect = correct_answers)
 	return JsonResponse({'answer': 'success'})
+
+def get_new_rate(old_rate, success_run, drill_res):
+	if drill_res == 2:
+		nw_rate = log((success_run + 1) * 1.5) + old_rate
+		return nw_rate if nw_rate < UserWords.MAX_RATE else UserWords.MAX_RATE
+	elif drill_res == 1 or success_run != 0:
+		return old_rate
+	else:
+		return 0
 
 def getResponseDict(userWords_queryset):
 	i = 0

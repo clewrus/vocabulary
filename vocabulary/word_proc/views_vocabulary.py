@@ -54,7 +54,7 @@ def add_word(request):
 		else:
 			return not_eng_word_response
 	# adding the record to User's vocadulary
-	UserWords.objects.create(word=record, user_trans=user_trans, rating=10000, user=request.user)
+	UserWords.objects.create(word=record, user_trans=user_trans, rating=100, user=request.user)
 	return JsonResponse({'result': 'success', 'answer': 'created', 'word': [record.eng, record.rus, user_trans]})
 
 def remove_user_words(request):
