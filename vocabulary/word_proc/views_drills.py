@@ -11,16 +11,14 @@ def drills(request):
 	if not request.user.is_authenticated:
 		return HttpResponseRedirect(reverse('main_page'), {'error': "You are not authenticated"})
 
-	updateWordsRating(request.user)
+	update_words_rating(request.user)
 	unlearned_words = UserWords.objects.filter(learned=False, user=request.user).count()
 	return render(request, 'drills.html', {'user': request.user, 'unlearned_words':unlearned_words})
 
 def get_unlearned_word(request):
 	if not request.user.is_authenticated:
 		return JsonResponse({'error': 'You are not authenticated'})
-
 	unlearned_words = UserWords.objects.filter(learned=False, user=request.user)
-
 	return getResponseDict(unlearned_words)
 
 def set_word_as_learned(request):
@@ -35,7 +33,7 @@ def set_word_as_learned(request):
 		us_word.last_drilled = datetime.now()
 		us_word.last_rating_update = datetime.now()
 		us_word.success_run = 0
-		us_word.rating = 100
+		us_word.rating = 220.0
 		us_word.save()
 	except Dictionary.DoesNotExist:
 		print('Word does not exist ({w})'.format(w=learned_word) )
@@ -53,19 +51,19 @@ def get_drill_words(request):
 	drill_set = word_list[: num if num <= len(word_list) else len(word_list)]
 	return getResponseDict(drill_set)
 
-def updateWordsRating(user):
+def update_words_rating(user):
 	user_w_rec = UserWords.objects.filter(user=user, learned=True)
 	now_ = datetime.now()
+	updated = False
 	for w in user_w_rec:
 		diff = (now_ - w.last_rating_update).total_seconds()
 		if(diff > 43200):
-			w.rating = UserWords.rate_function(w.rating, diff)
-			w.last_rating_update = now_
-			if w.rating == 0:
-				w.learned = False
-			w.save()
+			updated = True
+			w.update_rating(now_)
 		else:
 			continue
+	if updated:
+		print('Rating updateв. User: {u}'.format(u=user.username))
 	return
 
 def handle_drill_result(request):
@@ -82,8 +80,8 @@ def handle_drill_result(request):
 			cur_res = int(drill_res[w][0])
 			word_record = Dictionary.objects.get(eng=w)
 			user_w_rec = UserWords.objects.get(user=request.user, word=word_record)
-			new_rate = get_new_rate(user_w_rec.rating, user_w_rec.success_run, cur_res)
-			user_w_rec.rating = new_rate
+			new_rate = get_new_rate(user_w_rec.get_rating(), user_w_rec.success_run, cur_res)
+			user_w_rec.set_rating(new_rate)
 			user_w_rec.success_run = (user_w_rec.success_run + 1) if cur_res == 2 else 0
 			correct_answers += 1 if cur_res == 2 else 0
 			if new_rate == 0:
@@ -102,8 +100,8 @@ def handle_drill_result(request):
 
 def get_new_rate(old_rate, success_run, drill_res):
 	if drill_res == 2:
-		nw_rate = log((success_run + 1) * 1.5) + old_rate
-		return nw_rate if nw_rate < UserWords.MAX_RATE else UserWords.MAX_RATE
+		nw_rate = log((success_run + 1) * 2.5 + 1) * 200 + old_rate
+		return nw_rate
 	elif drill_res == 1 or success_run != 0:
 		return old_rate
 	else:

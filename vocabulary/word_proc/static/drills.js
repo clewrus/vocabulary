@@ -98,7 +98,7 @@ function setWordAsLearned(){
 		url: $("#url_set_word_as_learned").html(),
 		data: {"word": curWord.eng},
 		type: "post",
-		success: () => {},
+		success: () => {$("#unlearned_words").val(+$("#unlearned_words").val() - 1)},
 		error: (res) => {console.log(res)},
 	});
 }
